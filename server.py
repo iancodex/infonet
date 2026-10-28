@@ -7,6 +7,8 @@ from datetime import datetime
 def receber_mensagem(conexao):
     dados = b""
 
+
+    
     while not dados.endswith(b"\n"):
         parte = conexao.recv(1)
 

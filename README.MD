@@ -5,7 +5,7 @@ Aplicação cliente-servidor em Python, usando sockets TCP, desenvolvida para a 
 ## Integrantes
 
 - **Nome: Ian Caio Pinhero da Frota** 
-- **Nome:** 
+- **Nome: Marcos Vinicius Mendes de Carvalho** 
 - **Nome:** 
 
 ## Descrição

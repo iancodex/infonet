@@ -14,6 +14,7 @@ O InfoNet é um serviço simples de consulta. Um cliente se conecta ao servidor 
 
 - consultar se o servidor está ativo (`INFO`);
 - consultar a data e a hora do servidor (`HORA`);
+- enviar um texto qualquer e receber o mesmo texto de volta (ECHO);
 - encerrar a sessão (`SAIR`).
 
 O servidor atende **vários clientes ao mesmo tempo**, criando uma thread para cada conexão.
@@ -62,6 +63,7 @@ Em compensação, o UDP preserva os limites de cada mensagem (datagrama), então
 ## Protocolo da aplicação
 
 As mensagens são **texto em UTF-8, uma por linha**, sempre terminadas em `\n`.
+Um comando pode ter um argumento separado por espaço (COMANDO argumento), como no ECHO. Os comandos devem ser escritos em maiúsculas.
 
 O TCP entrega um fluxo contínuo de bytes, sem marcar onde cada mensagem termina. Por isso o `\n` funciona como delimitador, e a função `receber()` lê byte a byte até encontrá-lo.
 
@@ -71,6 +73,7 @@ O TCP entrega um fluxo contínuo de bytes, sem marcar onde cada mensagem termina
 |---|---|
 | `INFO` | Consulta o status do servidor |
 | `HORA` | Consulta a data e a hora do servidor |
+|`ECHO <texto>\`|Envia um texto e pede que o servidor o devolva |
 | `SAIR` | Encerra a sessão |
 
 ### Respostas do servidor
@@ -79,7 +82,9 @@ O TCP entrega um fluxo contínuo de bytes, sem marcar onde cada mensagem termina
 |---|---|
 | `OK InfoNet ativo` | Resposta ao `INFO` |
 | `OK AAAA-MM-DD HH:MM:SS` | Resposta ao `HORA` |
+|`OK <texto>`|	Resposta ao ECHO, com o mesmo texto enviado |
 | `OK Encerrando` | Resposta ao `SAIR` (o servidor fecha a conexão em seguida) |
+|`ERRO TEXTO_VAZIO`|	ECHO enviado sem texto|
 | `ERRO COMANDO_INVALIDO` | Qualquer comando que não seja um dos três acima |
 
 Exemplo de uma sessão:
@@ -101,6 +106,7 @@ Servidor ->  OK Encerrando
 | Servidor cai durante a sessão | `receber()` retorna `None` (ou ocorre `OSError`) e o cliente mostra "Servidor desconectado" |
 | Cliente fecha a conexão ou cai | `receber()` retorna `None` e o servidor encerra apenas a thread daquele cliente |
 | Comando desconhecido | O servidor responde `ERRO COMANDO_INVALIDO` e a conexão continua aberta |
+|ECHO sem texto	O servidor responde ERRO TEXTO_VAZIO e a conexão continua aberta|
 | Bytes que não são UTF-8 | O servidor captura `UnicodeDecodeError`, registra o erro e encerra só aquele cliente |
 | Erro de rede (`OSError`) | Registrado no servidor, sem afetar os outros clientes |
 | Ctrl+C no servidor ou no cliente | Encerramento limpo, com o socket fechado |
@@ -126,12 +132,13 @@ Requisitos: Python 3, sem bibliotecas externas.
    ```
    1 - Consultar status
    2 - Consultar data e hora
-   3 - Sair
+   3 - Digitar Texto
+   4 - Sair
    ```
 
    Qualquer outra opção é enviada como comando inválido, para demonstrar a resposta de erro do servidor.
 
-Para rodar em computadores diferentes, altere `HOST` em `infonet.py` para o IP do servidor (no cliente) e use `0.0.0.0` no servidor.
+   A opção 3 pede um texto e mostra a resposta do servidor com o mesmo texto. Qualquer opção diferente das listadas é enviada como comando inválido, para demonstrar a resposta de erro do servidor.
 
 ## Captura de tráfego (Wireshark)
 
@@ -144,6 +151,6 @@ tcp.port == 5000
 O que observar na captura:
 
 - **Handshake TCP:** pacotes `SYN`, `SYN/ACK` e `ACK` no início da conexão;
-- **Dados da aplicação:** pacotes com os comandos (`INFO\n`, `HORA\n`) e as respostas (`OK ...\n`), visíveis em "Follow TCP Stream";
+- **Dados da aplicação:** pacotes com os comandos (`INFO\n`, `HORA\n`ECHO texto\n) e as respostas (OK ...\n, ERRO ...\n), legíveis em "Follow TCP Stream", já que o protocolo é texto puro;
 - **Confirmações:** `ACK` do TCP para cada envio;
 - **Encerramento:** pacotes `FIN` ao final da sessão.

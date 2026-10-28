@@ -8,9 +8,10 @@ HOST = "127.0.0.1"
 PORTA = 5000
 FIM_DE_LINHA = b"\n"
 
-CMD_INFO = "INFO"
-CMD_HORA = "HORA"
-CMD_SAIR = "SAIR"
+CMD_INFO = 'INFO'
+CMD_HORA = 'HORA'
+CMD_SAIR = 'SAIR'
+CMD_ECHO = 'ECHO'
 
 
 def enviar(sock, texto):
@@ -21,8 +22,8 @@ def receber(sock):
     #Le uma mensagem completa (ate '\\n').
 
     #O TCP e um fluxo de bytes e não tem fronteiras de mensagem,
-    #por isso o '\\n' é usado como delimitador.
-    #Retorna None se o outro lado fechou a conexão.
+    #por isso o '\\n' é usado pra delimitar 
+    #retorna none se o outro lado fechou a conexão.
     
     dados = b""
     while not dados.endswith(FIM_DE_LINHA):

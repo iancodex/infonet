@@ -5,16 +5,22 @@ from datetime import datetime
 import infonet
 
 
-def processar_comando(comando):
+def processar_comando(mensagem):
     # recebe comando e devolver, resposta e encerrar
+
+    comando, _, argumento = mensagem.partition (' ')
     if comando == infonet.CMD_INFO:
         return "OK InfoNet ativo", False
 
     if comando == infonet.CMD_HORA:
         return f"OK {datetime.now():%Y-%m-%d %H:%M:%S}", False
 
+    if comando == infonet.CMD_ECHO:
+        if not argumento:
+            return 'ERRO TEXTO_VAZIO', False
+        return f'OK {argumento}', False
     if comando == infonet.CMD_SAIR:
-        return "OK Encerrando", True
+            return "OK Encerrando", True
 
     return "ERRO COMANDO_INVALIDO", False
 

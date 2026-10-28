@@ -6,12 +6,14 @@ MENU = """
 === InfoNet ===
 1 - Consultar status
 2 - Consultar data e hora
-3 - Sair"""
+3 - Digitar Texto
+4 - Sair """
 
 OPCOES = {
     "1": infonet.CMD_INFO,
     "2": infonet.CMD_HORA,
-    "3": infonet.CMD_SAIR,
+    "3": infonet.CMD_ECHO,
+    "4": infonet.CMD_SAIR
 }
 
 
@@ -29,7 +31,12 @@ def main():
                 #assim o servidor responde "ERRO" (útil para demonstrar no Wireshark).
                 comando = OPCOES.get(opcao, "INVALIDO")
 
-                infonet.enviar(cliente, comando)
+                mensagem = comando
+                if comando == infonet.CMD_ECHO:
+                    texto = input("Digite o texto: ")
+                    mensagem = f'{comando} {texto}'
+
+                infonet.enviar(cliente, mensagem)
                 resposta = infonet.receber(cliente)
 
                 if resposta is None:

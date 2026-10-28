@@ -2,18 +2,18 @@ import socket
 import threading
 from datetime import datetime
 
-import protocolo
+import infonet
 
 
 def processar_comando(comando):
     # recebe comando e devolver, resposta e encerrar
-    if comando == protocolo.CMD_INFO:
+    if comando == infonet.CMD_INFO:
         return "OK InfoNet ativo", False
 
-    if comando == protocolo.CMD_HORA:
+    if comando == infonet.CMD_HORA:
         return f"OK {datetime.now():%Y-%m-%d %H:%M:%S}", False
 
-    if comando == protocolo.CMD_SAIR:
+    if comando == infonet.CMD_SAIR:
         return "OK Encerrando", True
 
     return "ERRO COMANDO_INVALIDO", False
@@ -27,14 +27,14 @@ def atender_cliente(conexao, endereco):
     try:
         with conexao:
             while True:
-                comando = protocolo.receber(conexao)
+                comando = infonet.receber(conexao)
                 if comando is None:  # cliente fechou a conexão
                     break
 
                 print(f"[COMANDO] {cliente}: {comando}")
 
                 resposta, encerrar = processar_comando(comando)
-                protocolo.enviar(conexao, resposta)
+                infonet.enviar(conexao, resposta)
 
                 if encerrar:
                     break
@@ -49,11 +49,11 @@ def atender_cliente(conexao, endereco):
 def main():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as servidor:
         servidor.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        servidor.bind((protocolo.HOST, protocolo.PORTA))
+        servidor.bind((infonet.HOST, infonet.PORTA))
         servidor.listen()
 
         print("=== Servidor InfoNet ===")
-        print(f"Aguardando conexões em {protocolo.HOST}:{protocolo.PORTA}...")
+        print(f"Aguardando conexões em {infonet.HOST}:{infonet.PORTA}...")
         print("Pressione Ctrl+C para encerrar.\n")
 
         try:

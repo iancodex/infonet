@@ -1,6 +1,6 @@
 import socket
 
-import protocolo
+import infonet
 
 MENU = """
 === InfoNet ===
@@ -9,16 +9,16 @@ MENU = """
 3 - Sair"""
 
 OPCOES = {
-    "1": protocolo.CMD_INFO,
-    "2": protocolo.CMD_HORA,
-    "3": protocolo.CMD_SAIR,
+    "1": infonet.CMD_INFO,
+    "2": infonet.CMD_HORA,
+    "3": infonet.CMD_SAIR,
 }
 
 
 def main():
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as cliente:
-            cliente.connect((protocolo.HOST, protocolo.PORTA))
+            cliente.connect((infonet.HOST, infonet.PORTA))
             print("Conectado ao servidor InfoNet!")
 
             while True:
@@ -29,8 +29,8 @@ def main():
                 #assim o servidor responde "ERRO" (útil para demonstrar no Wireshark).
                 comando = OPCOES.get(opcao, "INVALIDO")
 
-                protocolo.enviar(cliente, comando)
-                resposta = protocolo.receber(cliente)
+                infonet.enviar(cliente, comando)
+                resposta = infonet.receber(cliente)
 
                 if resposta is None:
                     print("Servidor desconectado.")
@@ -38,7 +38,7 @@ def main():
 
                 print(f"Resposta do servidor: {resposta}")
 
-                if comando == protocolo.CMD_SAIR:
+                if comando == infonet.CMD_SAIR:
                     break
 
     except ConnectionRefusedError:

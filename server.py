@@ -1,93 +1,72 @@
-
 import socket
 import threading
 from datetime import datetime
 
-
-def receber_mensagem(conexao):
-    dados = b""
+import protocolo
 
 
-    
-    while not dados.endswith(b"\n"):
-        parte = conexao.recv(1)
+def processar_comando(comando):
+    # recebe comando e devolver, resposta e encerrar
+    if comando == protocolo.CMD_INFO:
+        return "OK InfoNet ativo", False
 
-        if not parte:
-            return None
+    if comando == protocolo.CMD_HORA:
+        return f"OK {datetime.now():%Y-%m-%d %H:%M:%S}", False
 
-        dados += parte
+    if comando == protocolo.CMD_SAIR:
+        return "OK Encerrando", True
 
-    return dados.decode("utf-8").strip()
+    return "ERRO COMANDO_INVALIDO", False
 
 
 def atender_cliente(conexao, endereco):
-    identificacao = f"{endereco[0]}:{endereco[1]}"
-
-    print(f"[CONECTADO] Cliente {identificacao}")
+    #atende um cliente (roda em uma thread propria)
+    cliente = f"{endereco[0]}:{endereco[1]}"
+    print(f"[CONECTADO] {cliente}")
 
     try:
         with conexao:
             while True:
-                mensagem = receber_mensagem(conexao)
-
-                if mensagem is None:
+                comando = protocolo.receber(conexao)
+                if comando is None:  # cliente fechou a conexão
                     break
 
-                print(f"[COMANDO] Cliente {identificacao}: {mensagem}")
+                print(f"[COMANDO] {cliente}: {comando}")
 
-                if mensagem == "INFO":
-                    resposta = "OK InfoNet ativo"
+                resposta, encerrar = processar_comando(comando)
+                protocolo.enviar(conexao, resposta)
 
-                elif mensagem == "HORA":
-                    hora = datetime.now().strftime(
-                        "%Y-%m-%d %H:%M:%S"
-                    )
-                    resposta = f"OK {hora}"
-
-                elif mensagem == "SAIR":
-                    resposta = "OK Encerrando"
-                    conexao.sendall(
-                        (resposta + "\n").encode("utf-8")
-                    )
+                if encerrar:
                     break
 
-                else:
-                    resposta = "ERRO COMANDO_INVALIDO"
-
-                conexao.sendall(
-                    (resposta + "\n").encode("utf-8")
-                )
-
-    except OSError as erro:
-        print(f"[ERRO] Cliente {identificacao}: {erro}")
+    except (OSError, UnicodeDecodeError) as erro:
+        print(f"[ERRO] {cliente}: {erro}")
 
     finally:
-        print(f"[DESCONECTADO] Cliente {identificacao}")
+        print(f"[DESCONECTADO] {cliente}")
 
 
-servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-servidor.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-servidor.bind(("127.0.0.1", 5000))
-servidor.listen()
+def main():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as servidor:
+        servidor.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        servidor.bind((protocolo.HOST, protocolo.PORTA))
+        servidor.listen()
 
-print("=== Servidor InfoNet ===")
-print("Aguardando conexões na porta 5000...")
-print("Pressione Ctrl+C para encerrar.\n")
+        print("=== Servidor InfoNet ===")
+        print(f"Aguardando conexões em {protocolo.HOST}:{protocolo.PORTA}...")
+        print("Pressione Ctrl+C para encerrar.\n")
 
-try:
-    while True:
-        conexao, endereco = servidor.accept()
+        try:
+            while True:
+                conexao, endereco = servidor.accept()
+                threading.Thread(
+                    target=atender_cliente,
+                    args=(conexao, endereco),
+                    daemon=True,
+                ).start()
+        except KeyboardInterrupt:
+            print("\nEncerrando o servidor...")
 
-        thread = threading.Thread(
-            target=atender_cliente,
-            args=(conexao, endereco),
-            daemon=True
-        )
-        thread.start()
 
-except KeyboardInterrupt:
-    print("\nEncerrando o servidor...")
-
-finally:
-    servidor.close()
-
+if __name__ == "__main__":
+    main()
